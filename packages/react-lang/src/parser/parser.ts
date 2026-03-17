@@ -546,6 +546,16 @@ function mapNode(
     for (let i = 0; i < def.params.length && i < args.length; i++)
       props[def.params[i].name] = toJson(args[i], partial, errors, cat);
 
+    // Report extra positional args that have no corresponding param
+    if (args.length > def.params.length) {
+      errors.push({
+        component: name,
+        path: "",
+        message: `${name} takes ${def.params.length} arg(s), got ${args.length}`,
+        rule: "excess-args",
+      });
+    }
+
     // Validate required props — try defaultValue first before dropping
     const missingRequired = def.params.filter(
       (p) => p.required && (!(p.name in props) || props[p.name] === null),
@@ -567,16 +577,41 @@ function mapNode(
               p.name in props
                 ? `required field "${p.name}" cannot be null`
                 : `missing required field "${p.name}"`,
+            rule: p.name in props ? "null-required" : "missing-required",
           });
         return null;
       }
     }
   } else {
-    // No library entry for this component — preserve all args under _args
+    // Component name not found in schema — report and preserve args for debugging
+    errors.push({
+      component: name,
+      path: "",
+      message: `unknown component "${name}"`,
+      rule: "unknown-component",
+    });
     props._args = args.map((a) => toJson(a, partial, errors, cat));
   }
 
   return { type: "element", typeName: name, props, partial };
+}
+
+/** Promotes `meta.unresolved` entries to `validationErrors` once the stream is complete. */
+function promoteUnresolved(result: ParseResult): ParseResult {
+  if (!result.meta.unresolved.length) return result;
+  const extra = result.meta.unresolved.map((name) => ({
+    component: name,
+    path: "",
+    message: `unresolved reference "${name}"`,
+    rule: "unresolved-ref" as const,
+  }));
+  return {
+    ...result,
+    meta: {
+      ...result.meta,
+      validationErrors: [...result.meta.validationErrors, ...extra],
+    },
+  };
 }
 
 function emptyResult(incomplete = true): ParseResult {
@@ -638,7 +673,7 @@ export function parse(input: string, cat?: ParamMap): ParseResult {
     if (!firstId) firstId = s.id;
   }
 
-  return buildResult(syms, firstId, wasIncomplete, stmts.length, cat);
+  return promoteUnresolved(buildResult(syms, firstId, wasIncomplete, stmts.length, cat));
 }
 
 export interface StreamParser {
@@ -646,6 +681,17 @@ export interface StreamParser {
   push(chunk: string): ParseResult;
   /** Get the latest ParseResult without consuming new data. */
   getResult(): ParseResult;
+  /**
+   * Signal that the stream is complete.
+   *
+   * Returns the final ParseResult with any still-unresolved references
+   * promoted from `meta.unresolved` into `meta.validationErrors` as
+   * `unresolved-ref` errors. During streaming, unresolved references are
+   * expected (forward refs), so they are tracked but not treated as errors.
+   * Only after the stream ends can a missing definition be considered a
+   * genuine error.
+   */
+  finalize(): ParseResult;
 }
 
 export function createStreamParser(cat?: ParamMap): StreamParser {
@@ -734,6 +780,9 @@ export function createStreamParser(cat?: ParamMap): StreamParser {
       return currentResult();
     },
     getResult: currentResult,
+    finalize() {
+      return promoteUnresolved(currentResult());
+    },
   };
 }
 

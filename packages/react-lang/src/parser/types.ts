@@ -19,17 +19,35 @@ export interface ElementNode {
 }
 
 /**
- * A prop validation error from the Rust parser.
+ * Identifies which validation rule produced a `ValidationError`.
+ *
+ * - `missing-required`  — a required prop was absent and has no default value
+ * - `null-required`     — a required prop was explicitly null with no default
+ * - `unknown-component` — the component name is not in the library schema
+ * - `excess-args`       — more positional args were passed than the schema defines
+ * - `unresolved-ref`    — an identifier was referenced but never assigned (detected at stream end)
+ */
+export type ValidationRule =
+  | "missing-required"
+  | "null-required"
+  | "unknown-component"
+  | "excess-args"
+  | "unresolved-ref";
+
+/**
+ * A prop validation error from the parser.
  * When a component has missing required props, it is redacted from the
  * output tree (dropped as null) and errors are recorded here.
  */
 export interface ValidationError {
-  /** Component type name, e.g. "Header", "BarChart". */
+  /** Component type name, e.g. "Header", "BarChart". For unresolved-ref errors, the ref name. */
   component: string;
   /** JSON Pointer path within the props object, e.g. "/title", "". */
   path: string;
   /** Human-readable error message. */
   message: string;
+  /** Which validation rule produced this error. */
+  rule: ValidationRule;
 }
 
 /**
