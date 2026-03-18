@@ -26,17 +26,18 @@ const schema: ParamMap = new Map([
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const errors = (input: string) => parse(input, schema).meta.validationErrors;
-const rules = (input: string) => errors(input).map((e) => e.rule);
+const errors = (input: string) => parse(input, schema).meta.errors;
+const codes = (input: string) => errors(input).map((e) => e.code);
 
 // ── unknown-component ────────────────────────────────────────────────────────
 
 describe("unknown-component", () => {
   it("reports when component name is not in schema", () => {
     const result = parse('root = DataTable("col")', schema);
-    expect(result.meta.validationErrors).toHaveLength(1);
-    expect(result.meta.validationErrors[0]).toMatchObject({
-      rule: "unknown-component",
+    expect(result.meta.errors).toHaveLength(1);
+    expect(result.meta.errors[0]).toMatchObject({
+      type: "validation",
+      code: "unknown-component",
       component: "DataTable",
       path: "",
     });
@@ -50,14 +51,14 @@ describe("unknown-component", () => {
   });
 
   it("reports all unknown components in a tree", () => {
-    const r = rules('root = Stack([Ghost("a")])\n');
+    const r = codes('root = Stack([Ghost("a")])\n');
     expect(r).toContain("unknown-component");
   });
 
   it("does not report for known component names", () => {
     const result = parse('root = Stack(["hello"])', schema);
-    expect(rules('root = Stack(["hello"])')).not.toContain("unknown-component");
-    expect(result.meta.validationErrors).toHaveLength(0);
+    expect(codes('root = Stack(["hello"])')).not.toContain("unknown-component");
+    expect(result.meta.errors).toHaveLength(0);
   });
 });
 
@@ -66,13 +67,14 @@ describe("unknown-component", () => {
 describe("excess-args", () => {
   it("reports when more args are passed than params", () => {
     const result = parse('root = Title("hello", "extra")', schema);
-    expect(result.meta.validationErrors).toHaveLength(1);
-    expect(result.meta.validationErrors[0]).toMatchObject({
-      rule: "excess-args",
+    expect(result.meta.errors).toHaveLength(1);
+    expect(result.meta.errors[0]).toMatchObject({
+      type: "validation",
+      code: "excess-args",
       component: "Title",
       path: "",
     });
-    expect(result.meta.validationErrors[0].message).toMatch(/takes 1 arg/);
+    expect(result.meta.errors[0].message).toMatch(/takes 1 arg/);
   });
 
   it("still renders the component despite excess args", () => {
@@ -82,51 +84,41 @@ describe("excess-args", () => {
   });
 
   it("does not report when arg count matches param count", () => {
-    expect(rules('root = Title("hello")')).not.toContain("excess-args");
+    expect(codes('root = Title("hello")')).not.toContain("excess-args");
   });
 
   it("does not report when fewer args than params (handled by missing-required)", () => {
-    expect(rules("root = Table([], [])")).not.toContain("excess-args");
+    expect(codes("root = Table([], [])")).not.toContain("excess-args");
   });
 });
 
-// ── unresolved-ref (one-shot) ─────────────────────────────────────────────────
+// ── unresolved references ────────────────────────────────────────────────────
 
-describe("unresolved-ref (one-shot parse)", () => {
-  it("promotes unresolved ref to validationErrors", () => {
-    const result = parse("root = Stack([tbl])", schema);
-    expect(result.meta.validationErrors).toHaveLength(1);
-    expect(result.meta.validationErrors[0]).toMatchObject({
-      rule: "unresolved-ref",
-      component: "tbl",
-      path: "",
-    });
-  });
-
-  it("meta.unresolved is still populated", () => {
+describe("unresolved references", () => {
+  it("tracks unresolved refs in meta.unresolved (one-shot)", () => {
     const result = parse("root = Stack([tbl])", schema);
     expect(result.meta.unresolved).toContain("tbl");
   });
 
-  it("does not error when ref is defined", () => {
+  it("does not produce errors for unresolved refs", () => {
+    const result = parse("root = Stack([tbl])", schema);
+    expect(result.meta.errors).toHaveLength(0);
+  });
+
+  it("clears unresolved when ref is defined", () => {
     const result = parse('root = Stack([tbl])\ntbl = Title("hello")', schema);
-    expect(rules('root = Stack([tbl])\ntbl = Title("hello")')).not.toContain(
-      "unresolved-ref",
-    );
     expect(result.meta.unresolved).toHaveLength(0);
   });
 });
 
-// ── unresolved-ref (streaming) ────────────────────────────────────────────────
+// ── unresolved references (streaming) ─────────────────────────────────────────
 
-describe("unresolved-ref (streaming)", () => {
-  it("does NOT error on unresolved ref mid-stream", () => {
+describe("unresolved references (streaming)", () => {
+  it("tracks unresolved refs mid-stream without errors", () => {
     const parser = createStreamParser(schema);
     const midResult = parser.push('root = Stack([tbl])\n');
-    expect(midResult.meta.validationErrors.map((e) => e.rule)).not.toContain(
-      "unresolved-ref",
-    );
     expect(midResult.meta.unresolved).toContain("tbl");
+    expect(midResult.meta.errors).toHaveLength(0);
   });
 
   it("resolves automatically when ref is defined in a later chunk", () => {
@@ -136,40 +128,33 @@ describe("unresolved-ref (streaming)", () => {
     expect(result.meta.unresolved).toHaveLength(0);
   });
 
-  it("finalize() promotes still-unresolved refs to validationErrors", () => {
+  it("keeps unresolved refs in meta.unresolved at end of stream", () => {
     const parser = createStreamParser(schema);
     parser.push('root = Stack([tbl])\n');
-    const final = parser.finalize();
-    expect(final.meta.validationErrors).toHaveLength(1);
-    expect(final.meta.validationErrors[0]).toMatchObject({
-      rule: "unresolved-ref",
-      component: "tbl",
-    });
-  });
-
-  it("finalize() produces no unresolved-ref errors when ref was resolved", () => {
-    const parser = createStreamParser(schema);
-    parser.push('root = Stack([tbl])\n');
-    parser.push('tbl = Title("hello")\n');
-    const final = parser.finalize();
-    expect(final.meta.validationErrors.map((e) => e.rule)).not.toContain(
-      "unresolved-ref",
-    );
+    const result = parser.getResult();
+    expect(result.meta.unresolved).toContain("tbl");
+    expect(result.meta.errors).toHaveLength(0);
   });
 });
 
 // ── existing error rules ──────────────────────────────────────────────────────
 
-describe("existing errors carry rule tags", () => {
-  it("missing-required has rule tag", () => {
+describe("existing errors carry type and code", () => {
+  it("missing-required has correct shape", () => {
     const result = parse("root = Stack()", schema);
-    expect(result.meta.validationErrors).toHaveLength(1);
-    expect(result.meta.validationErrors[0].rule).toBe("missing-required");
+    expect(result.meta.errors).toHaveLength(1);
+    expect(result.meta.errors[0]).toMatchObject({
+      type: "validation",
+      code: "missing-required",
+    });
   });
 
-  it("null-required has rule tag", () => {
+  it("null-required has correct shape", () => {
     const result = parse("root = Stack(null)", schema);
-    expect(result.meta.validationErrors).toHaveLength(1);
-    expect(result.meta.validationErrors[0].rule).toBe("null-required");
+    expect(result.meta.errors).toHaveLength(1);
+    expect(result.meta.errors[0]).toMatchObject({
+      type: "validation",
+      code: "null-required",
+    });
   });
 });

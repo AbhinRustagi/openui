@@ -19,36 +19,36 @@ export interface ElementNode {
 }
 
 /**
- * Identifies which validation rule produced a `ValidationError`.
+ * Validation error codes for schema-related issues.
  *
  * - `missing-required`  — a required prop was absent and has no default value
  * - `null-required`     — a required prop was explicitly null with no default
  * - `unknown-component` — the component name is not in the library schema
  * - `excess-args`       — more positional args were passed than the schema defines
- * - `unresolved-ref`    — an identifier was referenced but never assigned (detected at stream end)
  */
-export type ValidationRule =
+export type ValidationErrorCode =
   | "missing-required"
   | "null-required"
   | "unknown-component"
-  | "excess-args"
-  | "unresolved-ref";
+  | "excess-args";
 
 /**
- * A prop validation error from the parser.
- * When a component has missing required props, it is redacted from the
- * output tree (dropped as null) and errors are recorded here.
+ * Structured error from the parser.
+ *
+ * Currently only `type: "validation"` exists; future versions may add
+ * `type: "parser"` for diagnostics like incomplete input.
  */
-export interface ValidationError {
-  /** Component type name, e.g. "Header", "BarChart". For unresolved-ref errors, the ref name. */
+export type OpenUIError = {
+  type: "validation";
+  /** Which validation rule produced this error. */
+  code: ValidationErrorCode;
+  /** Component type name, e.g. "Header", "BarChart". */
   component: string;
   /** JSON Pointer path within the props object, e.g. "/title", "". */
   path: string;
   /** Human-readable error message. */
   message: string;
-  /** Which validation rule produced this error. */
-  rule: ValidationRule;
-}
+};
 
 /**
  * Built-in action types for interactive components.
@@ -92,9 +92,9 @@ export interface ParseResult {
     /** Total number of `identifier = Expression` statements parsed. */
     statementCount: number;
     /**
-     * Prop validation errors. Components with missing required props are
-     * redacted (dropped as null) and listed here.
+     * Structured errors from the parser. Components with missing required
+     * props are redacted (dropped as null) and listed here.
      */
-    validationErrors: ValidationError[];
+    errors: OpenUIError[];
   };
 }

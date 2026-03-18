@@ -119,35 +119,41 @@ function AssistantMessage({ response, isStreaming }) {
 | `createParser(library)` | Create a one-shot parser for complete OpenUI Lang text |
 | `createStreamingParser(library)` | Create an incremental parser for streaming input |
 
-The streaming parser exposes three methods:
+The streaming parser exposes two methods:
 
 | Method | Description |
 | :--- | :--- |
 | `push(chunk)` | Feed the next chunk; returns the latest `ParseResult` |
 | `getResult()` | Get the latest result without consuming new data |
-| `finalize()` | Signal stream completion; promotes unresolved references to `validationErrors` |
 
-Call `finalize()` once after the last chunk to get the definitive result with all validation errors. Forward references are valid mid-stream, so `unresolved-ref` errors are only added at finalization.
+After the stream ends, check `meta.unresolved` for any identifiers that were referenced but never defined. During streaming these are expected (forward refs) and are not treated as errors.
 
-#### Validation errors
+#### Errors
 
-`ParseResult.meta.validationErrors` contains structured errors from the parser. Each error includes a `rule` field for consumer-side filtering:
+`ParseResult.meta.errors` contains structured `OpenUIError` objects. Each error has a `type` discriminant (currently always `"validation"`) and a `code` for consumer-side filtering:
 
-| Rule | Meaning |
+| Code | Meaning |
 | :--- | :--- |
 | `missing-required` | Required prop absent with no default |
 | `null-required` | Required prop explicitly null with no default |
 | `unknown-component` | Component name not found in the library schema |
 | `excess-args` | More positional args passed than the schema defines |
-| `unresolved-ref` | Identifier referenced but never assigned (after `finalize()`) |
 
-Validation errors do not affect rendering — the parser stays permissive and renders what it can. Use `rule` to decide how to surface or log errors:
+Errors do not affect rendering — the parser stays permissive and renders what it can. Use `code` to decide how to surface or log errors:
 
 ```ts
 const result = parser.parse(output);
-const critical = result.meta.validationErrors.filter(
-  (e) => e.rule === "unknown-component" || e.rule === "unresolved-ref"
+const critical = result.meta.errors.filter(
+  (e) => e.code === "unknown-component"
 );
+```
+
+To check for unresolved references after streaming, inspect `meta.unresolved`:
+
+```ts
+if (result.meta.unresolved.length > 0) {
+  console.warn("Unresolved refs:", result.meta.unresolved);
+}
 ```
 
 ### Context Hooks
@@ -188,8 +194,8 @@ import type {
   ActionEvent,
   ElementNode,
   ParseResult,
-  ValidationError,
-  ValidationRule,
+  OpenUIError,
+  ValidationErrorCode,
   LibraryJSONSchema,
 } from "@openuidev/react-lang";
 ```
