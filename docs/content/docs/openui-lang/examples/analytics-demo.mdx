@@ -223,13 +223,3 @@ The API route defines four server-side tools with built-in sample data:
 | `query_customers` | Customer segmentation by tier (Enterprise, Mid-Market, SMB, Individual) or region.     |
 
 No external API keys or data sources are needed. In a production app, replace the mock implementations with real database queries or API calls.
-
-## System prompt generation
-
-The `pnpm dev` script runs `generate:prompt` first, which inspects `src/library.ts` and writes `src/generated/system-prompt.txt`. This prompt tells the LLM about every available OpenUI Lang component and the visualization guidelines (e.g., use `LineChart` for time-series, `BarChart` for comparisons, `Table` for detailed data). Re-run it if you change the component library.
-
-```bash
-pnpm generate:prompt
-```
-
-See [System Prompts](/docs/openui-lang/system-prompts) for how prompt generation works.
