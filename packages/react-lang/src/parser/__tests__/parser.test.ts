@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createStreamParser, parse } from "../parser";
 import type { ParamMap } from "../parser";
+import { createStreamParser, parse } from "../parser";
 
 // ── Test schema ──────────────────────────────────────────────────────────────
 
@@ -116,21 +116,21 @@ describe("unresolved references", () => {
 describe("unresolved references (streaming)", () => {
   it("tracks unresolved refs mid-stream without errors", () => {
     const parser = createStreamParser(schema);
-    const midResult = parser.push('root = Stack([tbl])\n');
+    const midResult = parser.push("root = Stack([tbl])\n");
     expect(midResult.meta.unresolved).toContain("tbl");
     expect(midResult.meta.errors).toHaveLength(0);
   });
 
   it("resolves automatically when ref is defined in a later chunk", () => {
     const parser = createStreamParser(schema);
-    parser.push('root = Stack([tbl])\n');
+    parser.push("root = Stack([tbl])\n");
     const result = parser.push('tbl = Title("hello")\n');
     expect(result.meta.unresolved).toHaveLength(0);
   });
 
   it("keeps unresolved refs in meta.unresolved at end of stream", () => {
     const parser = createStreamParser(schema);
-    parser.push('root = Stack([tbl])\n');
+    parser.push("root = Stack([tbl])\n");
     const result = parser.getResult();
     expect(result.meta.unresolved).toContain("tbl");
     expect(result.meta.errors).toHaveLength(0);
