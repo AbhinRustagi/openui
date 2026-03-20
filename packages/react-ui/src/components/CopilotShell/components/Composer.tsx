@@ -10,7 +10,7 @@ export interface ComposerProps {
   placeholder?: string;
 }
 
-export const Composer = ({ className, placeholder = "Type your query here" }: ComposerProps) => {
+export const Composer = ({ className, placeholder = "Type your message..." }: ComposerProps) => {
   const { textContent, setTextContent } = useComposerState();
   const processMessage = useThread((s) => s.processMessage);
   const cancelMessage = useThread((s) => s.cancelMessage);
@@ -42,19 +42,19 @@ export const Composer = ({ className, placeholder = "Type your query here" }: Co
 
   return (
     <div
-      className={clsx("openui-shell-thread-composer", className)}
+      className={clsx("openui-copilot-shell-thread-composer", className)}
       onClick={(e) => {
         if (!(e.target as HTMLElement).closest("button, a, [role='button']")) {
           inputRef.current?.focus();
         }
       }}
     >
-      <div className="openui-shell-thread-composer__input-wrapper">
+      <div className="openui-copilot-shell-thread-composer__input-wrapper">
         <textarea
           ref={inputRef}
           value={textContent}
           onChange={(e) => setTextContent(e.target.value)}
-          className="openui-shell-thread-composer__input"
+          className="openui-copilot-shell-thread-composer__input"
           placeholder={placeholder}
           rows={1}
           onKeyDown={(e) => {
@@ -64,13 +64,13 @@ export const Composer = ({ className, placeholder = "Type your query here" }: Co
             }
           }}
         />
-        <div className="openui-shell-thread-composer__action-bar">
+        <div className="openui-copilot-shell-thread-composer__action-bar">
           <IconButton
             onClick={isRunning ? cancelMessage : handleSubmit}
             icon={isRunning ? <Square size="1em" fill="currentColor" /> : <ArrowUp size="1em" />}
             size="medium"
             variant="primary"
-            className="openui-shell-thread-composer__submit-button"
+            className="openui-copilot-shell-thread-composer__submit-button"
           />
         </div>
       </div>
