@@ -23,9 +23,10 @@ s2 = Series("Product B", [5, 15, 25])
 ## Core Rules
 
 1. **One statement per line:** `identifier = Expression`
-2. **Root Entry Point:** The first statement **must** assign to the identifier `root` (or call the Root component).
+2. **Root Entry Point:** The first statement **must** assign to the identifier `root` (or call the Root component). If missing, nothing renders.
 3. **Top-Down Generation:** Statements are generally written top-down (Layout -> Components -> Data) to maximize perceived performance during streaming.
 4. **Positional Arguments:** Arguments are mapped to component props by position, defined by the order of keys in your Zod schema.
+5. **Unique identifiers:** Each identifier can only be assigned once. Duplicate identifiers cause the second assignment to be dropped.
 
 ---
 
@@ -78,6 +79,12 @@ h1 = Header("Dashboard", "Overview")
 }
 ```
 
+### Critical implications for component design
+
+- **Key order in z.object is the API contract.** Changing key order breaks all existing LLM outputs.
+- **Required props must come before optional props** in the schema, since trailing optional args can be omitted.
+- **The LLM learns positions from the auto-generated system prompt.** If the prompt and schema disagree (e.g., after a schema change without regenerating the prompt), output will be garbled.
+
 ## Optional Arguments
 
 Optional arguments (trailing) can be omitted.
@@ -103,6 +110,7 @@ table = Table(rows)  // ...but defined here.
 
 1. **Step 1:** The renderer parses `root`. It sees `table` is undefined. It renders a **Skeleton/Placeholder** for the table.
 2. **Step 2:** The `table` definition arrives. The renderer updates the React tree, replacing the skeleton with the actual `Table` component.
+3. **Step 3:** `rows` arrives → Table fills in with data.
 
 ## Complete Syntax Example
 
@@ -123,4 +131,76 @@ main_chart = LineChart(
   ["Mon", "Tue", "Wed"],
   [Series("Visits", [100, 450, 320])]
 )
+```
+
+---
+
+## Common Errors
+
+These are the most frequent mistakes LLMs make when generating OpenUI Lang.
+
+### Missing root assignment
+
+The first statement must assign to `root`. Without it, nothing renders.
+
+```text
+// Wrong — no root
+header = Header("Title")
+body = TextContent("Content")
+
+// Correct
+root = Stack([header, body])
+header = Header("Title")
+body = TextContent("Content")
+```
+
+### Wrong argument count
+
+Providing more arguments than the schema defines causes the extra arguments to be dropped or the statement to fail validation.
+
+```text
+// Schema: z.object({ title: z.string(), subtitle: z.string() })
+
+// Wrong — 3 args for a 2-prop schema
+h1 = Header("Title", "Sub", "extra")
+
+// Correct
+h1 = Header("Title", "Sub")
+```
+
+### Hallucinated component names
+
+The LLM may invent component names that are not in the library. The parser drops any statement that references an unknown component.
+
+```text
+// Wrong — "Paragraph" is not registered
+text = Paragraph("Hello world")
+
+// Correct — use the registered name
+text = TextContent("Hello world")
+```
+
+### Incorrect nesting (inline vs reference)
+
+```
+// Both are valid — inline children or reference
+root = Stack([Header("Title"), TextContent("Body")])
+// OR
+root = Stack([h, t])
+h = Header("Title")
+t = TextContent("Body")
+```
+
+### Duplicate identifiers
+
+Each identifier can only be assigned once. If the same name is used twice, the second assignment is dropped.
+
+```text
+// Wrong — "card" assigned twice, second is dropped
+card = Card([title1])
+card = Card([title2])
+
+// Correct — use unique identifiers
+card1 = Card([title1])
+card2 = Card([title2])
 ```
