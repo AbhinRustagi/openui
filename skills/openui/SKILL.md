@@ -1,6 +1,6 @@
 ---
 name: openui
-description: "Build generative UI apps with OpenUI and OpenUI Lang — the token-efficient open standard for LLM-generated interfaces. Use when mentioning OpenUI, @openuidev, generative UI, streaming UI from LLMs, component libraries for AI, or replacing JSON-render/A2UI. Covers scaffolding, defineComponent, system prompts, the Renderer, and debugging OpenUI Lang output."
+description: "Build generative UI apps with OpenUI and OpenUI Lang — the token-efficient open standard for LLM-generated interfaces. Use when mentioning OpenUI, @openuidev, generative UI, streaming UI from LLMs, component libraries for AI, or replacing json-render/A2UI. Covers scaffolding, defineComponent, system prompts, the Renderer, and debugging OpenUI Lang output."
 ---
 
 # OpenUI — The Open Standard for Generative UI
@@ -89,6 +89,6 @@ npm run dev
 
 ## Framework Integration
 
-OpenUI works with any LLM framework. The scaffolded app uses the Vercel AI SDK by default, but integration patterns exist for: Vercel AI SDK, LangChain, CrewAI, OpenAI Agents SDK, Anthropic Agents SDK, Google ADK, and any framework that produces a text stream.
+OpenUI works with any LLM framework. The scaffolded app uses Next.js with the OpenAI SDK. Integration patterns exist for: Vercel AI SDK, LangChain, CrewAI, OpenAI Agents SDK, Anthropic Agents SDK, Google ADK, and any framework that produces a text stream.
 
 The core integration point is always the same: send the system prompt (from `library.prompt()`) to your LLM, then feed the streamed text into `<Renderer />`.

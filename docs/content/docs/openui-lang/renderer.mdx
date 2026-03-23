@@ -79,44 +79,6 @@ const Dashboard = defineComponent({
 });
 ```
 
-## Troubleshooting
-
-When LLM output doesn't render correctly, work through these steps:
-
-### Check the raw OpenUI Lang
-
-Log the streamed text before parsing. Common issues include a missing `root` assignment, typos in component names, or wrong argument count.
-
-### Use `onParseResult` to inspect errors
-
-Pass an `onParseResult` callback to `<Renderer />`. Inspect `meta.errors` for schema mismatches and `meta.unresolved` for identifiers that were referenced but never defined.
-
-```tsx
-<Renderer
-  library={library}
-  response={content}
-  isStreaming={isStreaming}
-  onParseResult={(result) => {
-    if (result) {
-      console.log("Validation errors:", result.meta.errors);
-      console.log("Unresolved refs:", result.meta.unresolved);
-    }
-  }}
-/>
-```
-
-### Verify Zod schema key order
-
-If props appear in the wrong position, the LLM's positional arguments map incorrectly. The key order in `z.object({...})` is the contract — changing it breaks existing outputs.
-
-### Inspect the JSON Schema
-
-Call `library.toJSONSchema()` to see exactly what the parser expects. Compare this against what the LLM is generating.
-
-### Invalid output is dropped, not fatal
-
-The parser drops invalid portions and renders everything else. If parts of the UI are missing, look for dropped lines in the raw output — they are the most likely culprit.
-
 ## Next Steps
 
 <Cards>
