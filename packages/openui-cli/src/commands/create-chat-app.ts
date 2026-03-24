@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { detectPackageManager } from "../lib/detect-package-manager";
+import { runSkillInstall, shouldInstallSkill } from "../lib/install-skill";
 import { resolveArgs } from "../lib/resolve-args";
 
 export interface CreateChatAppOptions {
@@ -39,8 +40,6 @@ export async function runCreateChatApp(options: CreateChatAppOptions): Promise<v
     console.error(`Error: Directory "${name}" already exists.`);
     process.exit(1);
   }
-
-  const installSkill = await shouldInstallSkill(options.skill, !options.noInteractive);
 
   const runner = detectPackageManager();
 
@@ -96,6 +95,7 @@ export async function runCreateChatApp(options: CreateChatAppOptions): Promise<v
     process.exit(1);
   }
 
+  const installSkill = await shouldInstallSkill(options.skill, !options.noInteractive);
   if (installSkill) {
     runSkillInstall(targetDir);
   }
@@ -110,44 +110,6 @@ export async function runCreateChatApp(options: CreateChatAppOptions): Promise<v
           : "npm";
 
   console.info(getStartedMessage(name, devCmd, installSkill));
-}
-
-async function shouldInstallSkill(
-  option: boolean | undefined,
-  interactive: boolean,
-): Promise<boolean> {
-  if (option !== undefined) return option;
-  if (!interactive) return false;
-
-  try {
-    const { confirm } = await import("@inquirer/prompts");
-    return await confirm({
-      message: "Install the OpenUI agent skill for AI coding assistants?",
-      default: true,
-    });
-  } catch (err) {
-    const { ExitPromptError } = await import("@inquirer/core");
-    if (err instanceof ExitPromptError) {
-      process.exit(0);
-    }
-    throw err;
-  }
-}
-
-function runSkillInstall(targetDir: string): void {
-  console.info("\nInstalling OpenUI agent skill...\n");
-  try {
-    execSync("npx -y skills add thesysdev/openui --skill openui -y", {
-      stdio: "inherit",
-      cwd: targetDir,
-    });
-  } catch {
-    console.warn(
-      "\nCould not install the OpenUI agent skill automatically.\n" +
-        "You can install it manually later with:\n\n" +
-        "  npx skills add thesysdev/openui --skill openui\n",
-    );
-  }
 }
 
 const getStartedMessage = (name: string, devCmd: string, skillInstalled: boolean) =>
