@@ -26,27 +26,44 @@ export const Table = defineComponent({
   name: "Table",
   props: z.object({
     columns: z.array(Col.ref),
-    rows: z.array(z.array(z.union([z.string(), z.number(), z.boolean()]))),
+    rows: z.any(),
   }),
   description: "Data table",
   component: ({ props, renderNode }) => {
     const columns = props.columns ?? [];
-    const rows = asArray(props.rows) as unknown[][];
+    const rawRows = asArray(props.rows) as unknown[];
 
     if (!columns.length) return null;
+
+    // Detect format: array of objects (from Query) vs 2D array (v1 static)
+    const isObjectRows =
+      rawRows.length > 0 &&
+      typeof rawRows[0] === "object" &&
+      rawRows[0] !== null &&
+      !Array.isArray(rawRows[0]);
+
+    // Extract column keys from Col definitions
+    const colKeys = columns.map((c: any) => c.props?.key ?? c.props?.label ?? "");
 
     return (
       <OpenUITable>
         <OpenUITableHeader>
           <OpenUITableRow>
-            {columns.map((c, i) => (
-              <OpenUITableHead key={i}>{c.props.label}</OpenUITableHead>
+            {columns.map((c: any, i: number) => (
+              <OpenUITableHead key={i}>{c.props?.label ?? ""}</OpenUITableHead>
             ))}
           </OpenUITableRow>
         </OpenUITableHeader>
         <OpenUITableBody>
-          {rows.map((row, ri) => {
-            const cells = asArray(row);
+          {rawRows.map((row: any, ri: number) => {
+            let cells: unknown[];
+            if (isObjectRows) {
+              // Object row: extract values using column keys
+              cells = colKeys.map((key: string) => row?.[key] ?? "");
+            } else {
+              // 2D array row
+              cells = asArray(row);
+            }
             return (
               <OpenUITableRow key={ri}>
                 {cells.map((cell, ci) => (

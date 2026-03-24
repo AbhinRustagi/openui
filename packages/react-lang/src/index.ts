@@ -22,6 +22,9 @@ export type { ActionEvent, ElementNode, ParseResult } from "./parser/types";
 // openui-lang parser (server-side use)
 export { createParser, createStreamingParser, type LibraryJSONSchema } from "./parser";
 
+// openui-lang edit/merge
+export { mergeStatements } from "./parser/merge";
+
 // openui-lang context hooks (for use inside component renderers)
 export {
   FormNameContext,
@@ -33,6 +36,13 @@ export {
   useSetFieldValue,
   useTriggerAction,
 } from "./context";
+
+// Runtime — reactive bindings, store, evaluator, query manager, field binding
+export { createMcpTransport, reactive } from "./runtime";
+export type { BoundField, McpConnection, Transport } from "./runtime";
+
+// Unified field binding hook — component authors use this
+export { useBoundField } from "./hooks/useBoundField";
 
 // openui-lang form validation
 export {

@@ -1,8 +1,10 @@
+import { reactive } from "@openuidev/react-lang";
 import { z } from "zod";
 import { rulesSchema } from "../rules";
 
 export const InputSchema = z.object({
   name: z.string(),
+  value: reactive(z.string().optional()),
   placeholder: z.string().optional(),
   type: z.enum(["text", "email", "password", "number", "url"]).optional(),
   rules: rulesSchema,

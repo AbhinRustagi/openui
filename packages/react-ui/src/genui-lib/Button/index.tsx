@@ -43,13 +43,14 @@ export const Button = defineComponent({
             | undefined;
           const actionType = action?.type ?? BuiltinActionType.ContinueConversation;
 
-          // Only validate for primary buttons with continue_conversation action (form submit).
+          // Validate for primary buttons with form-submitting actions (continue_conversation, mutation).
           // Secondary/tertiary buttons (e.g. "Ask to customize") skip validation.
           const variant = (props.variant as string) || "primary";
           if (
             formValidation &&
             variant === "primary" &&
-            actionType === BuiltinActionType.ContinueConversation
+            (actionType === BuiltinActionType.ContinueConversation ||
+              actionType === BuiltinActionType.Mutation)
           ) {
             const valid = formValidation.validateForm();
             if (!valid) return;
@@ -57,10 +58,14 @@ export const Button = defineComponent({
           const actionParams =
             actionType === BuiltinActionType.OpenUrl
               ? { url: action?.url }
-              : {
-                  ...(action?.params ?? {}),
-                  ...(action?.context ? { context: action.context } : {}),
-                };
+              : actionType === BuiltinActionType.Refresh
+                ? { deps: (action as any)?.deps }
+                : actionType === BuiltinActionType.Mutation
+                  ? { target: (action as any)?.target, refresh: (action as any)?.refresh }
+                  : {
+                      ...(action?.params ?? {}),
+                      ...(action?.context ? { context: action.context } : {}),
+                    };
           triggerAction(label, formName, {
             type: actionType,
             params: actionParams,

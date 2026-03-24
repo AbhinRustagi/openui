@@ -3,6 +3,7 @@ import { OpenUIContext, useOpenUI, useRenderNode } from "./context";
 import { useOpenUIState } from "./hooks/useOpenUIState";
 import type { ComponentRenderer, Library } from "./library";
 import type { ActionEvent, ElementNode, ParseResult } from "./parser/types";
+import type { Transport } from "./runtime/queryManager";
 
 export interface RendererProps {
   /** Raw response text (openui-lang code). */
@@ -17,14 +18,16 @@ export interface RendererProps {
    * Called whenever a form field value changes. Receives the raw form state map.
    * The consumer decides how to persist this (e.g. embed in message, store separately).
    */
-  onStateUpdate?: (state: Record<string, any>) => void;
+  onStateUpdate?: (state: Record<string, unknown>) => void;
   /**
    * Initial form state to hydrate on load (e.g. from a previously persisted message).
-   * Shape: { formName: { fieldName: { value, componentType } } }
+   * Shape: { bindings?: {...}, forms?: { formName: { fieldName: { source, ... } } } }
    */
-  initialState?: Record<string, any>;
+  initialState?: Record<string, unknown>;
   /** Called whenever the parse result changes. */
   onParseResult?: (result: ParseResult | null) => void;
+  /** Transport for Query() data fetching — MCP, REST, GraphQL, or any backend. */
+  transport?: Transport | null;
 }
 
 // ─── Error boundary ───
@@ -119,33 +122,42 @@ function RenderNode({ node }: { node: ElementNode }) {
 }
 
 /**
- * Renders a resolved element using its renderer. Gets renderNode from context.
+ * Renders a resolved element using its renderer.
+ * Props are already evaluated by evaluate-tree — no AST awareness needed.
  */
 function RenderNodeInner({ el, Comp }: { el: ElementNode; Comp: ComponentRenderer<any> }) {
   const renderNode = useRenderNode();
-  const { library } = useOpenUI();
+  return <Comp props={el.props} renderNode={renderNode} />;
+}
 
-  // Handle elements that have positional `args` instead of named `props`
-  let props = el.props;
-  if (!props) {
-    const args = (el as any).args as unknown[] | undefined;
-    if (args) {
-      const def = library.components[el.typeName];
-      if (def) {
-        const fieldNames = Object.keys(def.props.shape);
-        props = {};
-        for (let i = 0; i < fieldNames.length && i < args.length; i++) {
-          props[fieldNames[i]] = args[i];
-        }
-      }
-    }
-    props = props ?? {};
-  }
+// ─── Loading style injection (once per document) ───
 
-  return <Comp props={props} renderNode={renderNode} />;
+let loadingStyleInjected = false;
+function ensureLoadingStyle() {
+  if (loadingStyleInjected || typeof document === "undefined") return;
+  loadingStyleInjected = true;
+  const style = document.createElement("style");
+  style.textContent = `@keyframes openui-loading-bar { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`;
+  document.head.appendChild(style);
 }
 
 // ─── Public component ───
+
+const LoadingBar = () => (
+  <div
+    style={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      height: "3px",
+      background: "linear-gradient(90deg, transparent 0%, #3b82f6 50%, transparent 100%)",
+      backgroundSize: "200% 100%",
+      animation: "openui-loading-bar 1.5s ease-in-out infinite",
+      zIndex: 10,
+    }}
+  />
+);
 
 export function Renderer({
   response,
@@ -155,8 +167,11 @@ export function Renderer({
   onStateUpdate,
   initialState,
   onParseResult,
+  transport,
 }: RendererProps) {
-  const { result, contextValue } = useOpenUIState(
+  ensureLoadingStyle();
+
+  const { result, parseResult, contextValue, isQueryLoading } = useOpenUIState(
     {
       response,
       library,
@@ -164,13 +179,16 @@ export function Renderer({
       onAction,
       onStateUpdate,
       initialState,
+      transport,
     },
     renderDeep,
   );
 
+  // Fire onParseResult with the RAW parse result (not evaluated),
+  // so hosts only see changes when the parser output actually changes.
   useEffect(() => {
-    onParseResult?.(result);
-  }, [result, onParseResult]);
+    onParseResult?.(parseResult);
+  }, [parseResult, onParseResult]);
 
   if (!result?.root) {
     return null;
@@ -178,7 +196,12 @@ export function Renderer({
 
   return (
     <OpenUIContext.Provider value={contextValue}>
-      <RenderNode node={result.root} />
+      <div style={{ position: "relative" }}>
+        {isQueryLoading && <LoadingBar />}
+        <div style={{ opacity: isQueryLoading ? 0.7 : 1, transition: "opacity 0.2s ease" }}>
+          <RenderNode node={result.root} />
+        </div>
+      </div>
     </OpenUIContext.Provider>
   );
 }

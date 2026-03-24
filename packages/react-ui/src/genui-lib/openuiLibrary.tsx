@@ -164,6 +164,7 @@ export const openuiComponentGroups: ComponentGroup[] = [
 
 export const openuiExamples: string[] = [
   `Example 1 — Table:
+
 root = Stack([title, tbl])
 title = TextContent("Top Languages", "large-heavy")
 tbl = Table(cols, rows)
@@ -171,6 +172,7 @@ cols = [Col("Language", "string"), Col("Users (M)", "number"), Col("Year", "numb
 rows = [["Python", 15.7, 1991], ["JavaScript", 14.2, 1995], ["Java", 12.1, 1995], ["TypeScript", 8.5, 2012], ["Go", 5.2, 2009]]`,
 
   `Example 2 — Bar chart:
+
 root = Stack([title, chart])
 title = TextContent("Q4 Revenue", "large-heavy")
 chart = BarChart(labels, [s1, s2], "grouped")
@@ -179,6 +181,7 @@ s1 = Series("Product A", [120, 150, 180])
 s2 = Series("Product B", [90, 110, 140])`,
 
   `Example 3 — Form with validation:
+
 root = Stack([title, form])
 title = TextContent("Contact Us", "large-heavy")
 form = Form("contact", btns, [nameField, emailField, countryField, msgField])
@@ -190,6 +193,7 @@ countryOpts = [SelectItem("us", "United States"), SelectItem("uk", "United Kingd
 btns = Buttons([Button("Submit", { type: "continue_conversation" }, "primary"), Button("Cancel", { type: "continue_conversation" }, "secondary")])`,
 
   `Example 4 — Tabs with mixed content:
+
 root = Stack([title, tabs])
 title = TextContent("React vs Vue", "large-heavy")
 tabs = Tabs([tabReact, tabVue])
@@ -197,6 +201,15 @@ tabReact = TabItem("react", "React", reactContent)
 tabVue = TabItem("vue", "Vue", vueContent)
 reactContent = [TextContent("React is a library by Meta for building UIs."), Callout("info", "Note", "React uses JSX syntax.")]
 vueContent = [TextContent("Vue is a progressive framework by Evan You."), Callout("success", "Tip", "Vue has a gentle learning curve.")]`,
+
+  `Example 5 — PieChart and LineChart from Query data:
+
+root = Stack([header, chart, pie, tbl])
+header = CardHeader("Error Dashboard")
+errors = Query("get_error_breakdown", {dateRange: "14"}, {errors: []})
+chart = LineChart(errors.errors.category, [Series("Count", errors.errors.count)], "linear", "Category", "Count")
+pie = PieChart(errors.errors.category, errors.errors.count, "donut")
+tbl = Table([Col("Category", "category"), Col("Count", "count", "number")], errors.errors)`,
 ];
 
 export const openuiAdditionalRules: string[] = [

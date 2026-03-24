@@ -82,10 +82,19 @@ export interface ComponentGroup {
   notes?: string[];
 }
 
+/** Tool descriptor for prompt generation — simple string or rich object. */
+export type ToolDescriptor =
+  | string
+  | { name: string; description?: string; inputSchema?: Record<string, unknown> };
+
 export interface PromptOptions {
   preamble?: string;
   additionalRules?: string[];
   examples?: string[];
+  /** Available tools for Query() — string names or rich descriptors injected into the prompt. */
+  tools?: ToolDescriptor[];
+  /** Enable edit-mode instructions in the prompt. */
+  editMode?: boolean;
 }
 
 // ─── Library ──────────────────────────────────────────────────────────────────
