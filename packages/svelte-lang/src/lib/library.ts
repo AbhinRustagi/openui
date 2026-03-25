@@ -4,20 +4,21 @@ import {
   type DefinedComponent as CoreDefinedComponent,
   type Library as CoreLibrary,
   type LibraryDefinition as CoreLibraryDefinition,
-  type ComponentRenderProps as CoreRenderProps,
 } from "@openuidev/lang-core";
-import type { ReactNode } from "react";
+import type { Component, Snippet } from "svelte";
 import { z } from "zod";
 
 // Re-export framework-agnostic types unchanged
 export type { ComponentGroup, PromptOptions, SubComponentOf } from "@openuidev/lang-core";
 
-// ─── React-specific types ───────────────────────────────────────────────────
+// ─── Svelte-specific types ──────────────────────────────────────────────────
 
-export interface ComponentRenderProps<P = Record<string, unknown>>
-  extends CoreRenderProps<P, ReactNode> {}
+export interface ComponentRenderProps<P = Record<string, unknown>> {
+  props: P;
+  renderNode: Snippet<[unknown]>;
+}
 
-export type ComponentRenderer<P = Record<string, unknown>> = React.FC<ComponentRenderProps<P>>;
+export type ComponentRenderer<P = Record<string, unknown>> = Component<ComponentRenderProps<P>>;
 
 export type DefinedComponent<T extends z.ZodObject<any> = z.ZodObject<any>> = CoreDefinedComponent<
   T,
@@ -28,7 +29,7 @@ export type Library = CoreLibrary<ComponentRenderer<any>>;
 
 export type LibraryDefinition = CoreLibraryDefinition<ComponentRenderer<any>>;
 
-// ─── defineComponent (React) ────────────────────────────────────────────────
+// ─── defineComponent (Svelte) ───────────────────────────────────────────────
 
 /**
  * Define a component with name, schema, description, and renderer.
@@ -40,16 +41,7 @@ export type LibraryDefinition = CoreLibraryDefinition<ComponentRenderer<any>>;
  *   name: "TabItem",
  *   props: z.object({ value: z.string(), trigger: z.string(), content: z.array(ContentChildUnion) }),
  *   description: "Tab panel",
- *   component: () => null,
- * });
- *
- * const Tabs = defineComponent({
- *   name: "Tabs",
- *   props: z.object({ items: z.array(TabItem.ref) }),
- *   description: "Tabbed container",
- *   component: ({ props, renderNode }) => {
- *     props.items.map(item => renderNode(item.props.content));
- *   },
+ *   component: TabItemRenderer,
  * });
  * ```
  */
@@ -62,7 +54,7 @@ export function defineComponent<T extends z.ZodObject<any>>(config: {
   return coreDefineComponent<T, ComponentRenderer<z.infer<T>>>(config);
 }
 
-// ─── createLibrary (React) ──────────────────────────────────────────────────
+// ─── createLibrary (Svelte) ─────────────────────────────────────────────────
 
 /**
  * Create a component library from an array of defined components.
