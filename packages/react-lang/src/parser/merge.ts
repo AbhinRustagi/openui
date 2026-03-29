@@ -16,7 +16,7 @@ interface ParsedStatement {
 /**
  * Parse an openui-lang program into individual named statements.
  */
-function parseStatements(input: string): ParsedStatement[] {
+export function parseStatements(input: string): ParsedStatement[] {
   const trimmed = input.trim();
   if (!trimmed) return [];
 
@@ -47,7 +47,7 @@ function parseStatements(input: string): ParsedStatement[] {
  * LLMs sometimes prepend explanatory text — remove it so the parser works.
  * A valid statement line matches: identifier = expression (or $identifier = expression)
  */
-function stripNonStatements(input: string): string {
+export function stripNonStatements(input: string): string {
   const STMT_RE = /^\$?[a-zA-Z_][a-zA-Z0-9_]*\s*=/;
   return input
     .split("\n")
@@ -61,7 +61,7 @@ function stripNonStatements(input: string): string {
 /**
  * Recursively collect all Ref names from an AST node.
  */
-function collectRefs(node: ASTNode, out: Set<string>): void {
+export function collectRefs(node: ASTNode, out: Set<string>): void {
   switch (node.k) {
     case "Ref":
       out.add(node.n);
@@ -106,7 +106,7 @@ function collectRefs(node: ASTNode, out: Set<string>): void {
  * Walks the AST graph from root, collecting all referenced statement IDs.
  * $state variables are always kept (they're referenced at runtime, not by Ref nodes).
  */
-function gcUnreachable(
+export function gcUnreachable(
   order: string[],
   merged: Map<string, string>,
   asts: Map<string, ASTNode>,

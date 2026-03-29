@@ -85,7 +85,7 @@ export function collectQueryDeps(node: unknown): string[] {
  * Classify a raw statement + parsed expression into a typed Statement.
  * Determined at parse time from token type + expression shape.
  */
-function classifyStatement(raw: RawStmt, expr: ASTNode): Statement {
+export function classifyStatement(raw: RawStmt, expr: ASTNode): Statement {
   // Query(...) → query declaration — check BEFORE $var to handle `$foo = Query(...)` correctly
   if (expr.k === "Comp" && expr.name === RESERVED_CALLS.Query) {
     const deps = collectQueryDeps(expr.args[1]);
@@ -113,7 +113,7 @@ function classifyStatement(raw: RawStmt, expr: ASTNode): Statement {
 }
 
 /** Build a symbol table (Map<id, ASTNode>) from typed statements for materializeValue. */
-function buildSymbolTable(stmtMap: Map<string, Statement>): Map<string, ASTNode> {
+export function buildSymbolTable(stmtMap: Map<string, Statement>): Map<string, ASTNode> {
   const m = new Map<string, ASTNode>();
   for (const [id, stmt] of stmtMap) {
     switch (stmt.kind) {
@@ -138,7 +138,7 @@ function buildSymbolTable(stmtMap: Map<string, Statement>): Map<string, ASTNode>
  * Extract typed statements from the symbol table.
  * State defaults are materialized to plain values (no raw AST in output).
  */
-function extractStatements(
+export function extractStatements(
   stmts: Statement[],
   ctx: MaterializeCtx,
 ): {
@@ -395,7 +395,7 @@ function getSchemaDefaultValue(property: unknown): unknown {
   return (property as { default?: unknown }).default;
 }
 
-function compileSchema(schema: LibraryJSONSchema): ParamMap {
+export function compileSchema(schema: LibraryJSONSchema): ParamMap {
   const map: ParamMap = new Map();
   const defs = schema.$defs ?? {};
 

@@ -1,4 +1,4 @@
-export { BuiltinActionType } from "./types";
+export { BuiltinActionType, isElementNode } from "./types";
 export type {
   ActionEvent,
   ElementNode,
@@ -11,12 +11,26 @@ export type {
   ValidationError,
 } from "./types";
 
-export { createParser, createStreamingParser, parse } from "./parser";
+export {
+  classifyStatement,
+  buildSymbolTable,
+  compileSchema,
+  extractStatements,
+  createParser,
+  createStreamingParser,
+  parse,
+} from "./parser";
 export type { Parser, StreamParser } from "./parser";
 
 export { generatePrompt } from "./prompt";
 
-export { mergeStatements } from "./merge";
+export {
+  collectRefs,
+  gcUnreachable,
+  mergeStatements,
+  parseStatements,
+  stripNonStatements,
+} from "./merge";
 
 // Shared builtin registry
 export { BUILTINS, BUILTIN_NAMES, isBuiltin } from "./builtins";

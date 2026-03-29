@@ -54,3 +54,12 @@ export type { FormValidationContextValue } from "./hooks/useFormValidation";
 
 export { builtInValidators, parseRules, parseStructuredRules, validate } from "./utils/validation";
 export type { ParsedRule, ValidatorFn } from "./utils/validation";
+
+// Stateful renderer — incremental rendering with retained node map
+export { StatefulRenderer } from "./stateful";
+export type {
+  StatefulRendererProps,
+  StatefulRendererHandle,
+  NodeStore,
+  RetainedNode,
+} from "./stateful";
