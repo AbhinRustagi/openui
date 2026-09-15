@@ -23,6 +23,7 @@ import {
   SingleStackedBarChart,
 } from "./Charts";
 
+import { IconButton } from "./IconButton";
 import { Table } from "./Table";
 import { TagBlock } from "./TagBlock";
 
@@ -68,18 +69,8 @@ export const ContentChildUnion = z.union([
   TagBlock.ref,
   Form.ref,
   Buttons.ref,
+  IconButton.ref,
   Steps.ref,
-]);
-
-// Chat-specific content union — no Stack, adds ListBlock / FollowUpBlock / SectionBlock,
-// plus the chat-only blocks (InlineHeader, EntityList, EditableTable, card blocks).
-// Note: Tabs and Carousel are NOT included here to avoid circular deps (Tabs/schema.ts imports ContentChildUnion).
-// ChatCardChildUnion (which adds Tabs + Carousel) is defined in openuiChatLibrary.tsx.
-export const ChatContentChildUnion = z.union([
-  ...ContentChildUnion.options,
-  ListBlock.ref,
-  FollowUpBlock.ref,
-  SectionBlock.ref,
   InlineHeader.ref,
   EntityList.ref,
   EditableTable.ref,
@@ -88,4 +79,17 @@ export const ChatContentChildUnion = z.union([
   ContextCardBlock.ref,
   CompositeCardBlock.ref,
   VisualCardBlock.ref,
+]);
+
+// Chat-specific content union — no Stack, adds ListBlock / FollowUpBlock / SectionBlock
+// (conversational features with no place in the base library). Everything else
+// (InlineHeader, EntityList, EditableTable, card blocks) now lives in the base
+// ContentChildUnion above and is inherited here via the spread.
+// Note: Tabs and Carousel are NOT included here to avoid circular deps (Tabs/schema.ts imports ContentChildUnion).
+// ChatCardChildUnion (which adds Tabs + Carousel) is defined in openuiChatLibrary.tsx.
+export const ChatContentChildUnion = z.union([
+  ...ContentChildUnion.options,
+  ListBlock.ref,
+  FollowUpBlock.ref,
+  SectionBlock.ref,
 ]);

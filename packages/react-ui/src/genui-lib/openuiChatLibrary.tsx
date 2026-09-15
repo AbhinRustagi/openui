@@ -38,8 +38,8 @@ import {
 // Forms
 import { CheckBoxGroup, CheckBoxItem } from "./CheckBoxGroup";
 import { DatePicker } from "./DatePicker";
-import { Form, FormRenderer } from "./Form";
-import { FormControlRenderer } from "./FormControl";
+import { Form } from "./Form";
+import { FormControl } from "./FormControl";
 import { Input } from "./Input";
 import { Label } from "./Label";
 import { RadioGroup, RadioItem } from "./RadioGroup";
@@ -98,55 +98,14 @@ import { VisualCardBlock, VisualCardItem } from "./VisualCardBlock";
 
 import { ChatContentChildUnion } from "./unions";
 
-// ── Chat FormControl — same renderer as the base FormControl, wider input union ──
-// (Chips / OptionCards are chat-only inputs, so the base FormControlSchema is left untouched.)
-
-const ChatFormControl = defineComponent({
-  name: "FormControl",
-  props: z.object({
-    label: z.string(),
-    input: z.union([
-      Input.ref,
-      TextArea.ref,
-      Select.ref,
-      DatePicker.ref,
-      Slider.ref,
-      CheckBoxGroup.ref,
-      RadioGroup.ref,
-      Chips.ref,
-      OptionCards.ref,
-    ]),
-    hint: z.string().optional(),
-  }),
-  description: "Field with label, input component, and optional hint text",
-  component: FormControlRenderer,
-});
-
-// ── Chat Form — same renderer, but its fields reference the chat FormControl above ──
-
-const ChatForm = defineComponent({
-  name: "Form",
-  props: z.object({
-    name: z.string(),
-    buttons: Buttons.ref,
-    fields: z.array(ChatFormControl.ref).default([]),
-  }),
-  description: "Form container with fields and explicit action buttons",
-  component: FormRenderer,
-});
-
 // ── Chat containers — same renderers as the base Tabs / Accordion / Carousel / SectionItem,
 // but their content unions accept every chat block (card blocks, EntityList, EditableTable,
 // InlineHeader, ...). Defined here, not in unions.ts, to avoid circular imports; registered
 // under the base names so SectionBlock's `SectionItem.ref` resolves to the chat variant.
 
 // Everything a nested container may hold — no SectionBlock nesting.
-// Base `Form.ref` is swapped for the chat Form so the JSON schema emits a $ref to the
-// registered component instead of inlining the base Form's shape.
 const ChatNestedContentUnion = z.union(
-  ChatContentChildUnion.options
-    .filter((o) => o !== SectionBlock.ref)
-    .map((o) => (o === Form.ref ? ChatForm.ref : o)) as [
+  ChatContentChildUnion.options.filter((o) => o !== SectionBlock.ref) as [
     z.ZodTypeAny,
     z.ZodTypeAny,
     ...z.ZodTypeAny[],
@@ -463,8 +422,8 @@ export const openuiChatLibrary = createLibrary({
     ScatterSeries,
     Point,
     // Forms
-    ChatForm,
-    ChatFormControl,
+    Form,
+    FormControl,
     Label,
     Input,
     TextArea,
@@ -501,7 +460,7 @@ export const openuiChatLibrary = createLibrary({
     TagBlock,
     Tag,
     EntityList,
-    // Content (chat-only)
+    // Content
     InlineHeader,
     Icon,
     IconButton,
