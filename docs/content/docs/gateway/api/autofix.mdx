@@ -272,8 +272,8 @@ The generation may be bare OpenUI Lang, a fenced code block, or an assistant tur
 ## Limits
 
 - The generation can be up to 100,000 characters.
-- The turns before it can hold up to 20 usable turns and 8,000 characters of text in total, counted after tool turns and non-text parts are dropped.
-- Only the most recent turns are used. Older turns are dropped first.
+- The turns before it can hold up to 20 usable turns and 8,000 characters of text in total, counted after tool turns, non-text parts, and config blocks are removed.
+- Requests exceeding either context limit are rejected with `400`. Trim older history before sending; the API does not drop it automatically.
 - Up to two attempts are made to fix one generation.
 - Only non-streaming responses are supported. `stream: true` is a `400`.
 
