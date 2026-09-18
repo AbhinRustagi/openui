@@ -4,7 +4,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 import { isTruthyEnv } from "./env";
-import { CreateError } from "./telemetry";
+import { CreateError } from "./errors";
 
 const GIT_TIMEOUT_MS = 60_000;
 const FETCH_TIMEOUT_MS = 30_000;

@@ -62,3 +62,6 @@ draft/
 
 # Local raw-asset drop folder (copied into docs/public to serve)
 /assets/
+
+# Accidental CLI template checkouts
+packages/openui-cli/src/templates/
